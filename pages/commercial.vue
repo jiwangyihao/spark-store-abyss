@@ -545,9 +545,6 @@ const sendEmail = () => {
       class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-6 lg:py-8"
       :class="{ 'is-visible': governanceVisible }"
     >
-      <div class="governance-glow governance-glow-left" />
-      <div class="governance-glow governance-glow-right" />
-
       <div class="relative z-10 w-full max-w-[92rem]">
         <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
           <Icon
@@ -833,9 +830,6 @@ section {
 .governance-section {
   isolation: isolate;
   perspective: 1400px;
-  background:
-    radial-gradient(circle at 78% 48%, color-mix(in srgb, var(--p-primary-300) 18%, transparent), transparent 42%),
-    linear-gradient(105deg, color-mix(in srgb, var(--p-primary-100) 18%, transparent), transparent 58%);
 }
 
 .governance-heading,
@@ -860,32 +854,6 @@ section {
 .governance-section.is-visible .governance-visual {
   opacity: 1;
   transform: translate3d(0, 0, 0) rotateY(0) scale(1);
-}
-
-.governance-glow {
-  position: absolute;
-  width: min(42rem, 70vw);
-  aspect-ratio: 1;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--p-primary-400) 18%, transparent);
-  filter: blur(90px);
-  opacity: 0;
-  transition: opacity 1.2s ease 400ms;
-  z-index: -1;
-}
-
-.governance-section.is-visible .governance-glow {
-  opacity: 0.7;
-}
-
-.governance-glow-left {
-  left: -16rem;
-  bottom: -13rem;
-}
-
-.governance-glow-right {
-  right: -10rem;
-  top: -12rem;
 }
 
 .governance-panel {
@@ -1089,43 +1057,177 @@ section {
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1199px) {
   .governance-section {
     height: auto;
-    min-height: 100vh;
+    min-height: 100svh;
+    overflow: visible;
+    padding-block: 2rem;
   }
 
   .governance-panel {
     grid-template-columns: 1fr;
+    width: 100%;
+    height: auto;
+    min-height: 0;
   }
 
   .governance-tabs {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid color-mix(in srgb, var(--p-primary-400) 15%, var(--p-surface-200));
   }
 
+  .governance-tab {
+    min-height: 4.5rem;
+  }
+
   .governance-detail {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(15rem, 0.78fr) minmax(24rem, 1.22fr);
+    padding: 1.75rem;
   }
 
   .governance-visual {
-    transform: translateY(30px) scale(0.9);
+    transform: translateY(24px) scale(0.92);
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 767px) {
+  .governance-section {
+    min-height: 100svh;
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .governance-heading {
+    justify-content: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .governance-heading :deep(svg) {
+    flex: 0 0 auto;
+    font-size: 3.25rem !important;
+  }
+
+  .governance-panel {
+    border-radius: 1.25rem;
+  }
+
   .governance-tabs {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 0.35rem;
+    padding: 0.65rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .governance-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .governance-tab {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 7.75rem;
+    min-height: 2.75rem;
+    padding: 0.7rem 0.9rem 0.7rem 1.1rem;
+    scroll-snap-align: start;
   }
 
   .governance-tab-desc {
     display: none;
   }
 
+  .governance-tab-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
   .governance-detail {
-    padding: 1.25rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    padding: 1.1rem;
+    overflow: visible;
+  }
+
+  .governance-detail-copy {
+    gap: 0.9rem;
+  }
+
+  .governance-detail-copy h3 {
+    font-size: 1.5rem;
+  }
+
+  .governance-detail-copy > div > p {
+    font-size: 0.95rem;
+  }
+
+  .governance-hint {
+    font-size: 0.78rem;
+  }
+
+  .governance-features {
+    gap: 0.7rem;
+  }
+
+  .governance-features li {
+    padding-left: 0.75rem;
+  }
+
+  .governance-features strong {
+    font-size: 0.9rem;
+  }
+
+  .governance-features span {
+    font-size: 0.78rem;
+  }
+
+  .governance-visual {
+    align-self: auto;
+    transform: translateY(20px) scale(0.94);
+  }
+
+  .governance-image-frame {
+    aspect-ratio: 1.55;
+    border-radius: 0.65rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .governance-section {
+    padding-inline: 0.75rem;
+  }
+
+  .governance-heading :deep(svg) {
+    font-size: 2.85rem !important;
+  }
+
+  .governance-heading h2 {
+    font-size: 1.25rem;
+  }
+
+  .governance-heading h2 span {
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 1200px) and (max-height: 760px) {
+  .governance-panel {
+    height: calc(100dvh - 8.5rem);
+    min-height: 24rem;
+  }
+
+  .governance-heading {
+    margin-bottom: 0.5rem;
+  }
+
+  .governance-detail {
+    padding-block: 1.25rem;
   }
 }
 
