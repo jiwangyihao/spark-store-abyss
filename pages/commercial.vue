@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   onMounted,
+  onBeforeUnmount,
   watchEffect,
   ref,
   inject,
@@ -13,6 +14,9 @@ import Dialog from "primevue/dialog";
 const scrollPanel = inject<Ref<ComponentPublicInstance>>("scrollPanel");
 const sProgress = ref(0);
 const contactDialog = ref(false);
+const governanceSection = ref<HTMLElement | null>(null);
+const governanceVisible = ref(false);
+let governanceObserver: IntersectionObserver | undefined;
 
 onMounted(() => {
   watchEffect(() => {
@@ -22,7 +26,20 @@ onMounted(() => {
     const clientHeight = scrollPanel?.value?.$el.clientHeight || 1;
     sProgress.value = scrollTop / clientHeight;
   });
+
+  governanceObserver = new IntersectionObserver(
+    ([entry]) => {
+      governanceVisible.value = entry?.isIntersecting ?? false;
+    },
+    { threshold: 0.35 },
+  );
+
+  if (governanceSection.value) {
+    governanceObserver.observe(governanceSection.value);
+  }
 });
+
+onBeforeUnmount(() => governanceObserver?.disconnect());
 
 const scrollToNext = () => {
   const container = scrollPanel?.value?.$el.firstChild.firstChild;
@@ -433,61 +450,73 @@ const sendEmail = () => {
     </section>
 
     <section
-      class="flex flex-col items-center justify-center gap-6 lg:gap-8 px-8 pb-24 pt-24"
+      ref="governanceSection"
+      class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-16"
+      :class="{ 'is-visible': governanceVisible }"
     >
+      <div class="governance-glow governance-glow-left" />
+      <div class="governance-glow governance-glow-right" />
+
       <div
-        class="flex items-center justify-center self-start sm:self-center gap-4 sm:gap-6"
+        class="relative z-10 grid lg:grid-cols-[minmax(25rem,0.82fr)_minmax(38rem,1.45fr)] items-center gap-8 lg:gap-5 w-full max-w-[96rem]"
       >
-        <Icon
-          name="s:commercial-governance-title"
-          mode="svg"
-          class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
-        />
-        <h2
-          class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-primary-color font-bold leading-[1.3] dark:text-primary-400"
-        >
-          <span
-            class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase"
-            >GOVERNANCE</span
-          ><br />
-          内网管控&nbsp;&nbsp;应用中枢
-        </h2>
-      </div>
-      <div
-        class="flex gap-8 lg:gap-16 max-w-7xl w-full flex-col sm:flex-row items-center justify-center"
-      >
-        <Icon
-          name="s:commercial-governance"
-          class="w-full max-w-[20rem] sm:max-w-[24rem] lg:max-w-[30rem] h-auto object-contain hover:-translate-y-2 transition-transform duration-500 s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
-          mode="svg"
-        />
         <div
-          class="flex flex-col py-0 sm:py-8 lg:py-12 gap-6 items-center sm:items-start flex-1"
+          class="governance-copy order-2 lg:order-1 flex flex-col gap-5 lg:gap-6 items-center lg:items-start text-center lg:text-left"
         >
-          <div
-            class="flex flex-col text-center sm:text-start items-center sm:items-start"
-          >
-            <p
-              class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-[1.5]"
+          <div class="governance-heading flex items-center gap-4 sm:gap-5">
+            <Icon
+              name="s:commercial-governance-title"
+              mode="svg"
+              class="!text-6xl sm:!text-7xl lg:!text-[6.5rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
+            />
+            <h2
+              class="text-2xl sm:text-3xl lg:text-4xl text-primary-color font-bold leading-[1.25] dark:text-primary-400"
             >
+              <span
+                class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase text-base sm:text-lg lg:text-xl"
+                >GOVERNANCE</span
+              ><br />
+              内网管控&nbsp;&nbsp;应用中枢
+            </h2>
+          </div>
+
+          <div>
+            <p class="text-xl sm:text-2xl lg:text-3xl leading-[1.5]">
               内网应用管控
             </p>
             <p
-              class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.5] whitespace-nowrap"
+              class="text-2xl sm:text-3xl lg:text-4xl font-bold leading-[1.5] whitespace-nowrap"
             >
               统一上架授权运维
             </p>
           </div>
           <p
-            class="text-base sm:text-lg text-center sm:text-start text-surface-700 leading-[1.8] dark:text-surface-300"
+            class="text-sm sm:text-base lg:text-lg text-surface-700 leading-[1.8] dark:text-surface-300 max-w-[34rem]"
           >
             后台管理端面向企业内网运维场景，提供应用上架、下架、分类编辑、首页推荐、客户端授权许可、暂存推送、旧版本清理和客户端定制等能力。管理员可通过后端统一维护软件仓库与终端接入权限，实现应用分发、更新发布和安全管控闭环。
           </p>
-          <p
-            class="font-bold text-surface-700 dark:text-surface-300 text-base md:text-lg leading-[2]"
-          >
-            应用管理 / 终端授权 / 暂存推送 / 安全管控
-          </p>
+          <div class="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3">
+            <span class="governance-tag">应用管理</span>
+            <span class="governance-tag">终端授权</span>
+            <span class="governance-tag">暂存推送</span>
+            <span class="governance-tag">安全管控</span>
+          </div>
+        </div>
+
+        <div class="governance-visual order-1 lg:order-2 relative w-full flex justify-center lg:justify-end">
+          <div class="governance-callout governance-callout-left">
+            <span>仓库运维</span>
+            <strong>统一应用上架</strong>
+          </div>
+          <div class="governance-callout governance-callout-right">
+            <span>终端接入</span>
+            <strong>授权许可管控</strong>
+          </div>
+          <img
+            src="/images/commercial-governance-dashboard.png"
+            alt="星火商店企业管理后台总览"
+            class="governance-dashboard relative z-10 w-full max-w-[44rem] md:max-w-[52rem] lg:max-w-[61rem] h-auto object-contain rounded-xl shadow-2xl"
+          />
         </div>
       </div>
     </section>
@@ -691,5 +720,189 @@ section {
   width: 100%;
   height: 100vh;
   scroll-snap-align: start;
+}
+
+.governance-section {
+  isolation: isolate;
+  perspective: 1400px;
+  background:
+    radial-gradient(circle at 78% 48%, color-mix(in srgb, var(--p-primary-300) 18%, transparent), transparent 42%),
+    linear-gradient(105deg, color-mix(in srgb, var(--p-primary-100) 18%, transparent), transparent 58%);
+}
+
+.governance-heading,
+.governance-copy,
+.governance-visual {
+  opacity: 0;
+  transition:
+    opacity 700ms ease,
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.governance-heading {
+  transform: translateY(-30px);
+}
+
+.governance-copy {
+  transform: translateX(-70px);
+  transition-delay: 120ms;
+}
+
+.governance-visual {
+  transform: translateX(90px) translateY(28px) rotateY(-10deg) scale(0.78);
+  transform-origin: center bottom;
+  transition-delay: 220ms;
+}
+
+.governance-section.is-visible .governance-heading,
+.governance-section.is-visible .governance-copy,
+.governance-section.is-visible .governance-visual {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotateY(0) scale(1);
+}
+
+.governance-dashboard {
+  opacity: 0;
+  transform: translateY(28px) scale(0.96);
+  transition:
+    opacity 850ms ease 260ms,
+    transform 950ms cubic-bezier(0.22, 1, 0.36, 1) 260ms;
+}
+
+.governance-section.is-visible .governance-dashboard {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.governance-glow {
+  position: absolute;
+  width: min(42rem, 70vw);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--p-primary-400) 18%, transparent);
+  filter: blur(90px);
+  opacity: 0;
+  transition: opacity 1.2s ease 400ms;
+  z-index: -1;
+}
+
+.governance-section.is-visible .governance-glow {
+  opacity: 0.7;
+}
+
+.governance-glow-left {
+  left: -16rem;
+  bottom: -13rem;
+}
+
+.governance-glow-right {
+  right: -10rem;
+  top: -12rem;
+}
+
+.governance-tag {
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  color: var(--p-primary-600);
+  background: color-mix(in srgb, var(--p-primary-400) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--p-primary-400) 28%, transparent);
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition:
+    transform 250ms ease,
+    background-color 250ms ease;
+}
+
+.governance-tag:hover {
+  transform: translateY(-3px);
+  background: color-mix(in srgb, var(--p-primary-400) 20%, transparent);
+}
+
+.governance-callout {
+  position: absolute;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  min-width: 7.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--p-primary-400) 32%, transparent);
+  border-radius: 1.1rem;
+  color: var(--p-primary-700);
+  background: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--p-primary-900) 16%, transparent);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(18px) scale(0.9);
+  transition:
+    opacity 500ms ease,
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.governance-callout span {
+  color: var(--p-surface-500);
+  font-size: 0.75rem;
+}
+
+.governance-callout strong {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.governance-callout-left {
+  left: 0;
+  top: calc(43% + 10rem);
+  transition-delay: 850ms;
+}
+
+.governance-callout-right {
+  right: -0.5rem;
+  top: 29%;
+  transition-delay: 1s;
+}
+
+.governance-section.is-visible .governance-callout {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@media (min-width: 1280px) {
+  .governance-callout {
+    display: flex;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .governance-callout {
+    color: var(--p-primary-300);
+    background: color-mix(in srgb, var(--p-surface-900) 88%, transparent);
+  }
+}
+
+@media (max-width: 1023px) {
+  .governance-section {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .governance-visual {
+    transform: translateY(50px) scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .governance-heading,
+  .governance-copy,
+  .governance-visual {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .governance-dashboard,
+  .governance-callout {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 </style>
