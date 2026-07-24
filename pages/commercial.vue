@@ -439,6 +439,66 @@ const sendEmail = () => {
         class="flex items-center justify-center self-start sm:self-center gap-4 sm:gap-6"
       >
         <Icon
+          name="s:commercial-governance-title"
+          mode="svg"
+          class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
+        />
+        <h2
+          class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-primary-color font-bold leading-[1.3] dark:text-primary-400"
+        >
+          <span
+            class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase"
+            >GOVERNANCE</span
+          ><br />
+          内网管控&nbsp;&nbsp;应用中枢
+        </h2>
+      </div>
+      <div
+        class="flex gap-8 lg:gap-16 max-w-7xl w-full flex-col sm:flex-row items-center justify-center"
+      >
+        <Icon
+          name="s:commercial-governance"
+          class="w-full max-w-[20rem] sm:max-w-[24rem] lg:max-w-[30rem] h-auto object-contain hover:-translate-y-2 transition-transform duration-500 s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
+          mode="svg"
+        />
+        <div
+          class="flex flex-col py-0 sm:py-8 lg:py-12 gap-6 items-center sm:items-start flex-1"
+        >
+          <div
+            class="flex flex-col text-center sm:text-start items-center sm:items-start"
+          >
+            <p
+              class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-[1.5]"
+            >
+              内网应用管控
+            </p>
+            <p
+              class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.5] whitespace-nowrap"
+            >
+              统一上架授权运维
+            </p>
+          </div>
+          <p
+            class="text-base sm:text-lg text-center sm:text-start text-surface-700 leading-[1.8] dark:text-surface-300"
+          >
+            后台管理端面向企业内网运维场景，提供应用上架、下架、分类编辑、首页推荐、客户端授权许可、暂存推送、旧版本清理和客户端定制等能力。管理员可通过后端统一维护软件仓库与终端接入权限，实现应用分发、更新发布和安全管控闭环。
+          </p>
+          <p
+            class="font-bold text-surface-700 dark:text-surface-300 text-base md:text-lg leading-[2]"
+          >
+            应用管理 / 终端授权 / 暂存推送 / 安全管控
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="flex flex-col items-center justify-center gap-6 lg:gap-8 px-8 pb-24 pt-24"
+    >
+      <div
+        class="flex items-center justify-center self-start sm:self-center gap-4 sm:gap-6"
+      >
+        <Icon
           name="s:commercial-case-title"
           mode="svg"
           class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
