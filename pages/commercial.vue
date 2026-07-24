@@ -16,6 +16,97 @@ const sProgress = ref(0);
 const contactDialog = ref(false);
 const governanceSection = ref<HTMLElement | null>(null);
 const governanceVisible = ref(false);
+const activeGovernanceScene = ref(0);
+const governanceScenes = [
+  {
+    title: "应用管理",
+    desc: "多架构应用仓库统一维护",
+    hint: "应用检索  |  分类管理  |  移动下架  |  暂存变更",
+    image: "/images/03-apps.png",
+    features: [
+      ["多架构仓库", "按 amd64、arm64 与 loong64 分别维护应用"],
+      ["应用全程管理", "集中查看详情、调整分类、移动或下架应用"],
+      ["变更统一推送", "暂存应用调整，确认后一次性保存并推送"],
+    ],
+  },
+  {
+    title: "应用上架",
+    desc: "安装包解析与信息录入",
+    hint: "上传安装包  |  自动解析  |  架构选择  |  信息完善",
+    image: "/images/04-publish.png",
+    features: [
+      ["安装包上传", "支持拖入或选择对应架构的 deb 安装包"],
+      ["信息自动解析", "上传后自动解析软件包基础元数据"],
+      ["分步上架", "按上传、编辑和确认流程规范发布应用"],
+    ],
+  },
+  {
+    title: "首页推荐",
+    desc: "客户端首页内容统一运营",
+    hint: "推荐配置  |  内容排序  |  多架构适配  |  即时发布",
+    image: "/images/05-home.png",
+    features: [
+      ["推荐内容配置", "集中选择并维护客户端首页推荐应用"],
+      ["展示顺序调整", "根据企业需要灵活调整推荐内容顺序"],
+      ["多架构运营", "分别维护不同架构客户端的首页内容"],
+    ],
+  },
+  {
+    title: "客户端管理",
+    desc: "终端接入与状态集中管理",
+    hint: "终端总览  |  状态查询  |  接入管理  |  权限控制",
+    image: "/images/06-clients.png",
+    features: [
+      ["终端统一纳管", "集中查看已接入企业内网的客户端"],
+      ["运行状态总览", "快速掌握终端版本、架构和在线状态"],
+      ["接入权限控制", "通过后端统一维护终端访问权限"],
+    ],
+  },
+  {
+    title: "运维管理",
+    desc: "仓库发布与历史版本维护",
+    hint: "暂存推送  |  更新发布  |  旧版清理  |  仓库维护",
+    image: "/images/07-maintenance.png",
+    features: [
+      ["变更暂存推送", "审核仓库变更后统一保存并推送生效"],
+      ["旧版本清理", "清理历史软件包，控制仓库存储占用"],
+      ["发布过程可控", "形成应用变更、审核和发布管理闭环"],
+    ],
+  },
+  {
+    title: "客户端定制",
+    desc: "企业品牌与客户端能力配置",
+    hint: "品牌定制  |  客户端配置  |  内网部署  |  统一交付",
+    image: "/images/08-customize.png",
+    features: [
+      ["企业形象定制", "配置客户端名称、标识与品牌视觉"],
+      ["功能统一配置", "集中维护客户端功能和默认参数"],
+      ["专属客户端交付", "生成满足企业内网部署需求的客户端"],
+    ],
+  },
+  {
+    title: "授权管理",
+    desc: "客户端授权许可集中管控",
+    hint: "许可状态  |  授权配额  |  有效期限  |  公钥校验",
+    image: "/images/09-license.png",
+    features: [
+      ["授权状态总览", "集中查看许可状态、有效期和终端配额"],
+      ["许可安全校验", "使用信任公钥校验授权许可真实性"],
+      ["终端额度管控", "统一控制企业客户端可用授权数量"],
+    ],
+  },
+  {
+    title: "系统设置",
+    desc: "服务端与仓库运行参数配置",
+    hint: "仓库路径  |  服务端口  |  激活模式  |  密码策略",
+    image: "/images/10-settings.png",
+    features: [
+      ["服务端配置", "维护对外地址、仓库路径和服务端口"],
+      ["客户端激活模式", "根据部署要求选择自动或手动激活"],
+      ["管理安全策略", "配置许可公钥、密码过期和管理员密码"],
+    ],
+  },
+];
 let governanceObserver: IntersectionObserver | undefined;
 
 onMounted(() => {
@@ -451,72 +542,89 @@ const sendEmail = () => {
 
     <section
       ref="governanceSection"
-      class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-16"
+      class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-6 lg:py-8"
       :class="{ 'is-visible': governanceVisible }"
     >
       <div class="governance-glow governance-glow-left" />
       <div class="governance-glow governance-glow-right" />
 
-      <div
-        class="relative z-10 grid lg:grid-cols-[minmax(25rem,0.82fr)_minmax(38rem,1.45fr)] items-center gap-8 lg:gap-5 w-full max-w-[96rem]"
-      >
-        <div
-          class="governance-copy order-2 lg:order-1 flex flex-col gap-5 lg:gap-6 items-center lg:items-start text-center lg:text-left"
-        >
-          <div class="governance-heading flex items-center gap-4 sm:gap-5">
-            <Icon
-              name="s:commercial-governance-title"
-              mode="svg"
-              class="!text-6xl sm:!text-7xl lg:!text-[6.5rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
-            />
-            <h2
-              class="text-2xl sm:text-3xl lg:text-4xl text-primary-color font-bold leading-[1.25] dark:text-primary-400"
-            >
-              <span
-                class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase text-base sm:text-lg lg:text-xl"
-                >GOVERNANCE</span
-              ><br />
-              内网管控&nbsp;&nbsp;应用中枢
-            </h2>
-          </div>
-
-          <div>
-            <p class="text-xl sm:text-2xl lg:text-3xl leading-[1.5]">
-              内网应用管控
-            </p>
-            <p
-              class="text-2xl sm:text-3xl lg:text-4xl font-bold leading-[1.5] whitespace-nowrap"
-            >
-              统一上架授权运维
-            </p>
-          </div>
-          <p
-            class="text-sm sm:text-base lg:text-lg text-surface-700 leading-[1.8] dark:text-surface-300 max-w-[34rem]"
+      <div class="relative z-10 w-full max-w-[92rem]">
+        <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
+          <Icon
+            name="s:commercial-governance-title"
+            mode="svg"
+            class="!text-6xl sm:!text-7xl lg:!text-[6.5rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
+          />
+          <h2
+            class="text-2xl sm:text-3xl lg:text-4xl text-primary-color font-bold leading-[1.25] dark:text-primary-400"
           >
-            后台管理端面向企业内网运维场景，提供应用上架、下架、分类编辑、首页推荐、客户端授权许可、暂存推送、旧版本清理和客户端定制等能力。管理员可通过后端统一维护软件仓库与终端接入权限，实现应用分发、更新发布和安全管控闭环。
-          </p>
-          <div class="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3">
-            <span class="governance-tag">应用管理</span>
-            <span class="governance-tag">终端授权</span>
-            <span class="governance-tag">暂存推送</span>
-            <span class="governance-tag">安全管控</span>
-          </div>
+            <span
+              class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase text-base sm:text-lg lg:text-xl"
+              >GOVERNANCE</span
+            ><br />
+            内网管控&nbsp;&nbsp;应用中枢
+          </h2>
         </div>
 
-        <div class="governance-visual order-1 lg:order-2 relative w-full flex justify-center lg:justify-end">
-          <div class="governance-callout governance-callout-left">
-            <span>仓库运维</span>
-            <strong>统一应用上架</strong>
+        <div class="governance-panel">
+          <nav class="governance-tabs" aria-label="内网管控场景">
+            <button
+              v-for="(scene, index) in governanceScenes"
+              :key="scene.title"
+              type="button"
+              class="governance-tab"
+              :class="{ active: activeGovernanceScene === index }"
+              @click="activeGovernanceScene = index"
+            >
+              <span class="governance-tab-title">{{ scene.title }}</span>
+              <span class="governance-tab-desc">{{ scene.desc }}</span>
+            </button>
+          </nav>
+
+          <div class="governance-detail">
+            <Transition name="governance-scene" mode="out-in">
+              <div
+                :key="activeGovernanceScene"
+                class="governance-detail-copy"
+              >
+                <div>
+                  <p class="text-lg text-surface-600 dark:text-surface-300">
+                    {{ governanceScenes[activeGovernanceScene]?.desc }}
+                  </p>
+                  <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">
+                    {{ governanceScenes[activeGovernanceScene]?.title }}
+                  </h3>
+                </div>
+                <p class="governance-hint">
+                  {{ governanceScenes[activeGovernanceScene]?.hint }}
+                </p>
+                <ul class="governance-features">
+                  <li
+                    v-for="feature in governanceScenes[activeGovernanceScene]?.features"
+                    :key="feature[0]"
+                  >
+                    <strong>{{ feature[0] }}</strong>
+                    <span>{{ feature[1] }}</span>
+                  </li>
+                </ul>
+              </div>
+            </Transition>
+
+            <div class="governance-visual relative">
+              <Transition name="governance-image" mode="out-in">
+                <div
+                  :key="governanceScenes[activeGovernanceScene]?.image"
+                  class="governance-image-frame"
+                >
+                  <img
+                    :src="governanceScenes[activeGovernanceScene]?.image"
+                    :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面`"
+                    class="governance-dashboard"
+                  />
+                </div>
+              </Transition>
+            </div>
           </div>
-          <div class="governance-callout governance-callout-right">
-            <span>终端接入</span>
-            <strong>授权许可管控</strong>
-          </div>
-          <img
-            src="/images/commercial-governance-dashboard.png"
-            alt="星火商店企业管理后台总览"
-            class="governance-dashboard relative z-10 w-full max-w-[44rem] md:max-w-[52rem] lg:max-w-[61rem] h-auto object-contain rounded-xl shadow-2xl"
-          />
         </div>
       </div>
     </section>
@@ -731,7 +839,6 @@ section {
 }
 
 .governance-heading,
-.governance-copy,
 .governance-visual {
   opacity: 0;
   transition:
@@ -743,11 +850,6 @@ section {
   transform: translateY(-30px);
 }
 
-.governance-copy {
-  transform: translateX(-70px);
-  transition-delay: 120ms;
-}
-
 .governance-visual {
   transform: translateX(90px) translateY(28px) rotateY(-10deg) scale(0.78);
   transform-origin: center bottom;
@@ -755,23 +857,9 @@ section {
 }
 
 .governance-section.is-visible .governance-heading,
-.governance-section.is-visible .governance-copy,
 .governance-section.is-visible .governance-visual {
   opacity: 1;
   transform: translate3d(0, 0, 0) rotateY(0) scale(1);
-}
-
-.governance-dashboard {
-  opacity: 0;
-  transform: translateY(28px) scale(0.96);
-  transition:
-    opacity 850ms ease 260ms,
-    transform 950ms cubic-bezier(0.22, 1, 0.36, 1) 260ms;
-}
-
-.governance-section.is-visible .governance-dashboard {
-  opacity: 1;
-  transform: translateY(0) scale(1);
 }
 
 .governance-glow {
@@ -800,81 +888,204 @@ section {
   top: -12rem;
 }
 
-.governance-tag {
-  padding: 0.5rem 0.9rem;
-  border-radius: 9999px;
-  color: var(--p-primary-600);
-  background: color-mix(in srgb, var(--p-primary-400) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--p-primary-400) 28%, transparent);
-  font-size: 0.875rem;
-  font-weight: 700;
-  transition:
-    transform 250ms ease,
-    background-color 250ms ease;
-}
-
-.governance-tag:hover {
-  transform: translateY(-3px);
-  background: color-mix(in srgb, var(--p-primary-400) 20%, transparent);
-}
-
-.governance-callout {
-  position: absolute;
-  z-index: 20;
-  display: none;
-  flex-direction: column;
-  min-width: 7.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--p-primary-400) 32%, transparent);
-  border-radius: 1.1rem;
-  color: var(--p-primary-700);
+.governance-panel {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  height: min(34rem, calc(100vh - 10rem));
+  min-height: 26rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, var(--p-surface-200));
+  border-radius: 1.75rem;
   background: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--p-primary-900) 16%, transparent);
-  backdrop-filter: blur(14px);
-  opacity: 0;
-  transform: translateY(18px) scale(0.9);
-  transition:
-    opacity 500ms ease,
-    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--p-primary-900) 12%, transparent);
+  backdrop-filter: blur(18px);
 }
 
-.governance-callout span {
-  color: var(--p-surface-500);
-  font-size: 0.75rem;
+.governance-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  border-right: 1px solid color-mix(in srgb, var(--p-primary-400) 15%, var(--p-surface-200));
+  background: color-mix(in srgb, var(--p-surface-50) 72%, transparent);
 }
 
-.governance-callout strong {
-  font-size: 0.9rem;
-  white-space: nowrap;
+.governance-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem 0.65rem 1.15rem;
+  border: 0;
+  border-radius: 1rem;
+  color: var(--p-surface-600);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: color 250ms ease, background-color 250ms ease, transform 250ms ease;
 }
 
-.governance-callout-left {
+.governance-tab::before {
+  content: "";
+  position: absolute;
   left: 0;
-  top: calc(43% + 10rem);
-  transition-delay: 850ms;
+  top: 20%;
+  width: 0.25rem;
+  height: 60%;
+  border-radius: 9999px;
+  background: var(--p-primary-500);
+  opacity: 0;
+  transform: scaleY(0.3);
+  transition: opacity 250ms ease, transform 250ms ease;
 }
 
-.governance-callout-right {
-  right: -0.5rem;
-  top: 29%;
-  transition-delay: 1s;
+.governance-tab:hover {
+  color: var(--p-primary-600);
+  background: color-mix(in srgb, var(--p-primary-400) 7%, transparent);
+  transform: translateX(3px);
 }
 
-.governance-section.is-visible .governance-callout {
+.governance-tab.active {
+  color: var(--p-primary-700);
+  background: color-mix(in srgb, var(--p-primary-400) 13%, transparent);
+}
+
+.governance-tab.active::before {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: scaleY(1);
 }
 
-@media (min-width: 1280px) {
-  .governance-callout {
-    display: flex;
-  }
+.governance-tab-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.governance-tab-desc {
+  color: var(--p-surface-500);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.governance-detail {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(28rem, 1.28fr);
+  align-items: center;
+  gap: 2rem;
+  padding: 2.25rem;
+  overflow: hidden;
+}
+
+.governance-detail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.governance-hint {
+  color: var(--p-primary-600);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.governance-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.governance-features li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-left: 1rem;
+  border-left: 2px solid color-mix(in srgb, var(--p-primary-400) 45%, transparent);
+}
+
+.governance-features strong {
+  font-size: 1rem;
+}
+
+.governance-features span {
+  color: var(--p-surface-500);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.governance-visual {
+  align-self: end;
+}
+
+.governance-image-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.72;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, transparent);
+  border-radius: 0.85rem;
+  background: var(--p-surface-100);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--p-primary-900) 15%, transparent);
+}
+
+.governance-dashboard {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  transform: translateX(60px) scale(0.98);
+  transition:
+    opacity 850ms ease 260ms,
+    transform 950ms cubic-bezier(0.22, 1, 0.36, 1) 260ms;
+}
+
+.governance-section.is-visible .governance-dashboard {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.governance-image-enter-active,
+.governance-image-leave-active {
+  transition: opacity 260ms ease, transform 320ms ease;
+}
+
+.governance-image-enter-from {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.governance-image-leave-to {
+  opacity: 0;
+  transform: translateX(-18px);
+}
+
+.governance-scene-enter-active,
+.governance-scene-leave-active {
+  transition: opacity 220ms ease, transform 280ms ease;
+}
+
+.governance-scene-enter-from {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.governance-scene-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 @media (prefers-color-scheme: dark) {
-  .governance-callout {
-    color: var(--p-primary-300);
+  .governance-panel {
     background: color-mix(in srgb, var(--p-surface-900) 88%, transparent);
+  }
+
+  .governance-tabs {
+    background: color-mix(in srgb, var(--p-surface-950) 55%, transparent);
+  }
+
+  .governance-tab.active {
+    color: var(--p-primary-300);
   }
 }
 
@@ -884,8 +1095,37 @@ section {
     min-height: 100vh;
   }
 
+  .governance-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .governance-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--p-primary-400) 15%, var(--p-surface-200));
+  }
+
+  .governance-detail {
+    grid-template-columns: 1fr;
+  }
+
   .governance-visual {
-    transform: translateY(50px) scale(0.82);
+    transform: translateY(30px) scale(0.9);
+  }
+}
+
+@media (max-width: 639px) {
+  .governance-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .governance-tab-desc {
+    display: none;
+  }
+
+  .governance-detail {
+    padding: 1.25rem;
   }
 }
 
