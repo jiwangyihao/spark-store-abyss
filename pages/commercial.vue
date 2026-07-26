@@ -14,6 +14,7 @@ import Dialog from "primevue/dialog";
 const scrollPanel = inject<Ref<ComponentPublicInstance>>("scrollPanel");
 const sProgress = ref(0);
 const contactDialog = ref(false);
+const governancePreviewVisible = ref(false);
 const governanceSection = ref<HTMLElement | null>(null);
 const governanceVisible = ref(false);
 const activeGovernanceScene = ref(0);
@@ -108,6 +109,94 @@ const governanceScenes = [
   },
 ];
 let governanceObserver: IntersectionObserver | undefined;
+let governanceWheelCleanup: (() => void) | undefined;
+let governanceWheelLock = false;
+
+const isGovernanceScrollMode = () =>
+  window.matchMedia("(min-width: 1200px)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const getScrollContainer = () =>
+  scrollPanel?.value?.$el.firstChild.firstChild as HTMLElement | undefined;
+
+const getGovernanceSectionTop = () => {
+  const container = getScrollContainer();
+  if (!container || !governanceSection.value) return 0;
+  return governanceSection.value.offsetTop;
+};
+
+const scrollToGovernanceScene = (index: number) => {
+  const container = getScrollContainer();
+  if (!container) return;
+
+  container.scrollTo({
+    top: getGovernanceSectionTop() + index * container.clientHeight,
+    behavior: "smooth",
+  });
+};
+
+const handleGovernanceWheel = (event: WheelEvent) => {
+  const container = getScrollContainer();
+  if (
+    !container ||
+    !governanceSection.value ||
+    governancePreviewVisible.value ||
+    !isGovernanceScrollMode()
+  ) {
+    return;
+  }
+
+  const sectionTop = getGovernanceSectionTop();
+  const stepHeight = container.clientHeight;
+  const sectionEnd = sectionTop + governanceScenes.length * stepHeight;
+  const currentTop = container.scrollTop;
+  const direction = Math.sign(event.deltaY);
+
+  const isEnteringFromBefore =
+    direction > 0 &&
+    currentTop < sectionTop &&
+    sectionTop - currentTop <= stepHeight;
+
+  if (isEnteringFromBefore) {
+    event.preventDefault();
+    if (governanceWheelLock) return;
+    governanceWheelLock = true;
+    activeGovernanceScene.value = 0;
+    scrollToGovernanceScene(0);
+    window.setTimeout(() => {
+      governanceWheelLock = false;
+    }, 760);
+    return;
+  }
+
+  const isInsideGovernance =
+    currentTop >= sectionTop - 2 && currentTop < sectionEnd - 2;
+
+  if (!isInsideGovernance) return;
+
+  if (
+    (direction > 0 && activeGovernanceScene.value >= governanceScenes.length - 1) ||
+    (direction < 0 && activeGovernanceScene.value <= 0)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (governanceWheelLock || direction === 0) return;
+  governanceWheelLock = true;
+
+  const nextScene = Math.min(
+    governanceScenes.length - 1,
+    Math.max(0, activeGovernanceScene.value + direction),
+  );
+  activeGovernanceScene.value = nextScene;
+  scrollToGovernanceScene(nextScene);
+
+  window.setTimeout(() => {
+    governanceWheelLock = false;
+  }, 760);
+};
 
 onMounted(() => {
   watchEffect(() => {
@@ -116,21 +205,48 @@ onMounted(() => {
         .lastScrollTop || 0;
     const clientHeight = scrollPanel?.value?.$el.clientHeight || 1;
     sProgress.value = scrollTop / clientHeight;
+
+    if (
+      governanceSection.value &&
+      isGovernanceScrollMode()
+    ) {
+      const container = getScrollContainer();
+      if (!container) return;
+
+      const sectionTop = getGovernanceSectionTop();
+      const progress = Math.min(
+        governanceScenes.length - 1,
+        Math.max(0, (container.scrollTop - sectionTop) / container.clientHeight),
+      );
+      activeGovernanceScene.value = Math.round(progress);
+    }
   });
 
   governanceObserver = new IntersectionObserver(
     ([entry]) => {
-      governanceVisible.value = entry?.isIntersecting ?? false;
+      if (entry?.isIntersecting) {
+        governanceVisible.value = true;
+      }
     },
-    { threshold: 0.35 },
+    { threshold: 0 },
   );
 
   if (governanceSection.value) {
     governanceObserver.observe(governanceSection.value);
   }
+
+  const container = getScrollContainer();
+  if (container) {
+    container.addEventListener("wheel", handleGovernanceWheel, { passive: false });
+    governanceWheelCleanup = () =>
+      container.removeEventListener("wheel", handleGovernanceWheel);
+  }
 });
 
-onBeforeUnmount(() => governanceObserver?.disconnect());
+onBeforeUnmount(() => {
+  governanceObserver?.disconnect();
+  governanceWheelCleanup?.();
+});
 
 const scrollToNext = () => {
   const container = scrollPanel?.value?.$el.firstChild.firstChild;
@@ -545,18 +661,18 @@ const sendEmail = () => {
       class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-6 lg:py-8"
       :class="{ 'is-visible': governanceVisible }"
     >
-      <div class="relative z-10 w-full max-w-[92rem]">
+      <div class="governance-sticky relative z-10 w-full max-w-[92rem]">
         <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
           <Icon
             name="s:commercial-governance-title"
             mode="svg"
-            class="!text-6xl sm:!text-7xl lg:!text-[6.5rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
+            class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
           />
           <h2
-            class="text-2xl sm:text-3xl lg:text-4xl text-primary-color font-bold leading-[1.25] dark:text-primary-400"
+            class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-primary-color font-bold leading-[1.3] dark:text-primary-400"
           >
             <span
-              class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase text-base sm:text-lg lg:text-xl"
+              class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase"
               >GOVERNANCE</span
             ><br />
             内网管控&nbsp;&nbsp;应用中枢
@@ -571,7 +687,10 @@ const sendEmail = () => {
               type="button"
               class="governance-tab"
               :class="{ active: activeGovernanceScene === index }"
-              @click="activeGovernanceScene = index"
+              @click="
+                activeGovernanceScene = index;
+                if (isGovernanceScrollMode()) scrollToGovernanceScene(index);
+              "
             >
               <span class="governance-tab-title">{{ scene.title }}</span>
               <span class="governance-tab-desc">{{ scene.desc }}</span>
@@ -609,16 +728,23 @@ const sendEmail = () => {
 
             <div class="governance-visual relative">
               <Transition name="governance-image" mode="out-in">
-                <div
+                <button
                   :key="governanceScenes[activeGovernanceScene]?.image"
+                  type="button"
                   class="governance-image-frame"
+                  :aria-label="`放大查看${governanceScenes[activeGovernanceScene]?.title}后台界面`"
+                  @click="governancePreviewVisible = true"
                 >
                   <img
                     :src="governanceScenes[activeGovernanceScene]?.image"
                     :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面`"
                     class="governance-dashboard"
                   />
-                </div>
+                  <span class="governance-zoom-hint">
+                    <i class="pi pi-search-plus" />
+                    点击放大
+                  </span>
+                </button>
               </Transition>
             </div>
           </div>
@@ -754,6 +880,40 @@ const sendEmail = () => {
     </section>
 
     <Dialog
+      v-model:visible="governancePreviewVisible"
+      modal
+      dismissable-mask
+      :show-header="false"
+      class="governance-preview-dialog"
+      content-class="governance-preview-content"
+      :pt="{
+        root: {
+          style: 'padding:0; overflow:hidden;',
+        },
+        content: {
+          style: 'padding:0; margin:0; overflow:auto;',
+        },
+        mask: {
+          class: 'backdrop-blur-xl bg-black/70!',
+        },
+      }"
+    >
+      <button
+        type="button"
+        class="governance-preview-close"
+        aria-label="关闭图片预览"
+        @click="governancePreviewVisible = false"
+      >
+        <i class="pi pi-times" />
+      </button>
+      <img
+        :src="governanceScenes[activeGovernanceScene]?.image"
+        :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面大图`"
+        class="governance-preview-image"
+      />
+    </Dialog>
+
+    <Dialog
       v-model:visible="contactDialog"
       modal
       :show-header="false"
@@ -830,6 +990,28 @@ section {
 .governance-section {
   isolation: isolate;
   perspective: 1400px;
+}
+
+@media (min-width: 1200px) and (prefers-reduced-motion: no-preference) {
+  .governance-section {
+    height: 900vh;
+    min-height: 900vh;
+    align-items: flex-start;
+    overflow: visible;
+    padding-block: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .governance-sticky {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100dvh;
+    padding-block: 1rem;
+  }
 }
 
 .governance-heading,
@@ -988,13 +1170,52 @@ section {
 
 .governance-image-frame {
   position: relative;
+  display: block;
   width: 100%;
   aspect-ratio: 1.72;
+  padding: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, transparent);
   border-radius: 0.85rem;
   background: var(--p-surface-100);
   box-shadow: 0 20px 50px color-mix(in srgb, var(--p-primary-900) 15%, transparent);
+  cursor: zoom-in;
+  text-align: initial;
+}
+
+.governance-image-frame:focus-visible {
+  outline: 3px solid var(--p-primary-400);
+  outline-offset: 3px;
+}
+
+.governance-zoom-hint {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 9999px;
+  color: white;
+  background: rgb(15 23 42 / 72%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+  backdrop-filter: blur(10px);
+  font-size: 0.75rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.governance-image-frame:hover .governance-zoom-hint,
+.governance-image-frame:focus-visible .governance-zoom-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.governance-image-frame:hover .governance-dashboard {
+  transform: translateX(0) scale(1.02);
 }
 
 .governance-dashboard {
@@ -1011,6 +1232,82 @@ section {
 .governance-section.is-visible .governance-dashboard {
   opacity: 1;
   transform: translateX(0) scale(1);
+}
+
+.governance-preview-dialog {
+  width: min(94vw, 90rem) !important;
+  max-height: 94dvh;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 1.25rem !important;
+  background: var(--p-surface-0) !important;
+}
+
+:deep(.governance-preview-content) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 94dvh;
+  padding: 0 !important;
+  overflow: auto !important;
+  background: var(--p-surface-0);
+}
+
+.governance-preview-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 9999px;
+  color: white;
+  background: rgb(15 23 42 / 76%);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+.governance-preview-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  object-fit: contain;
+  vertical-align: top;
+}
+
+@media (prefers-color-scheme: dark) {
+  .governance-preview-dialog,
+  :deep(.governance-preview-content) {
+    background: var(--p-surface-900) !important;
+  }
+
+  .governance-preview-image {
+    border-color: var(--p-surface-700);
+  }
+}
+
+@media (max-width: 767px) {
+  .governance-preview-dialog {
+    width: calc(100vw - 1rem) !important;
+    max-height: 92dvh;
+    border-radius: 1rem !important;
+  }
+
+  :deep(.governance-preview-content) {
+    max-height: 92dvh;
+    padding: 0 !important;
+  }
+
+  .governance-zoom-hint {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .governance-image-enter-active,
