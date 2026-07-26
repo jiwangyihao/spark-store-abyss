@@ -268,6 +268,62 @@ const sendEmail = () => {
 <template>
   <div class="page">
     <section
+      ref="governanceSection"
+      class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-6 lg:py-8"
+      :class="{ 'is-visible': governanceVisible }"
+    >
+      <div class="governance-sticky relative z-10 w-full max-w-[92rem]">
+        <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
+          <Icon name="s:commercial-governance-title" mode="svg" class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900" />
+          <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-primary-color font-bold leading-[1.3] dark:text-primary-400"><span class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase">ENTERPRISE EDITION</span><br />星火应用商店商业版</h2>
+        </div>
+        <div class="governance-intro">
+          <p>为政府、企事业单位客户提供专业的应用商店解决方案：</p>
+          <div>
+            <span><i class="pi pi-check" />支持安装在主流信创设备上</span>
+            <span><i class="pi pi-check" />支持定制客户端和服务器端本地部署</span>
+            <span><i class="pi pi-check" />支持指定软件适配服务和信创设备迁移</span>
+          </div>
+          <p>助力客户构建完善的软件分发体系。</p>
+          <div class="governance-actions">
+            <button type="button" @click="sendEmail">联系客服</button>
+            <button type="button" @click="scrollToNext">了解更多</button>
+          </div>
+        </div>
+        <div class="governance-panel">
+          <nav class="governance-tabs" aria-label="内网管控场景">
+            <button v-for="(scene, index) in governanceScenes" :key="scene.title" type="button" class="governance-tab" :class="{ active: activeGovernanceScene === index }" @click="activeGovernanceScene = index; if (isGovernanceScrollMode()) scrollToGovernanceScene(index);">
+              <span class="governance-tab-title">{{ scene.title }}</span>
+              <span class="governance-tab-desc">{{ scene.desc }}</span>
+            </button>
+          </nav>
+          <div class="governance-detail">
+            <Transition name="governance-scene" mode="out-in">
+              <div :key="activeGovernanceScene" class="governance-detail-copy">
+                <div>
+                  <p class="text-lg text-surface-600 dark:text-surface-300">{{ governanceScenes[activeGovernanceScene]?.desc }}</p>
+                  <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">{{ governanceScenes[activeGovernanceScene]?.title }}</h3>
+                </div>
+                <p class="governance-hint">{{ governanceScenes[activeGovernanceScene]?.hint }}</p>
+                <ul class="governance-features">
+                  <li v-for="feature in governanceScenes[activeGovernanceScene]?.features" :key="feature[0]"><strong>{{ feature[0] }}</strong><span>{{ feature[1] }}</span></li>
+                </ul>
+              </div>
+            </Transition>
+            <div class="governance-visual relative">
+              <Transition name="governance-image" mode="out-in">
+                <button :key="governanceScenes[activeGovernanceScene]?.image" type="button" class="governance-image-frame" :aria-label="`放大查看${governanceScenes[activeGovernanceScene]?.title}后台界面`" @click="governancePreviewVisible = true">
+                  <img :src="governanceScenes[activeGovernanceScene]?.image" :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面`" class="governance-dashboard" />
+                  <span class="governance-zoom-hint"><i class="pi pi-search-plus" />点击放大</span>
+                </button>
+              </Transition>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section
+      v-if="false"
       class="relative flex items-center justify-center gap-10 pt-24 pb-24 sm:pb-0 flex-col sm:flex-row"
     >
       <div
@@ -657,102 +713,6 @@ const sendEmail = () => {
     </section>
 
     <section
-      ref="governanceSection"
-      class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-6 lg:py-8"
-      :class="{ 'is-visible': governanceVisible }"
-    >
-      <div class="governance-sticky relative z-10 w-full max-w-[92rem]">
-        <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
-          <Icon
-            name="s:commercial-governance-title"
-            mode="svg"
-            class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900"
-          />
-          <h2
-            class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-primary-color font-bold leading-[1.3] dark:text-primary-400"
-          >
-            <span
-              class="font-(family-name:--s-title-font) text-primary-400 font-normal dark:opacity-50 tracking-widest uppercase"
-              >GOVERNANCE</span
-            ><br />
-            内网管控&nbsp;&nbsp;应用中枢
-          </h2>
-        </div>
-
-        <div class="governance-panel">
-          <nav class="governance-tabs" aria-label="内网管控场景">
-            <button
-              v-for="(scene, index) in governanceScenes"
-              :key="scene.title"
-              type="button"
-              class="governance-tab"
-              :class="{ active: activeGovernanceScene === index }"
-              @click="
-                activeGovernanceScene = index;
-                if (isGovernanceScrollMode()) scrollToGovernanceScene(index);
-              "
-            >
-              <span class="governance-tab-title">{{ scene.title }}</span>
-              <span class="governance-tab-desc">{{ scene.desc }}</span>
-            </button>
-          </nav>
-
-          <div class="governance-detail">
-            <Transition name="governance-scene" mode="out-in">
-              <div
-                :key="activeGovernanceScene"
-                class="governance-detail-copy"
-              >
-                <div>
-                  <p class="text-lg text-surface-600 dark:text-surface-300">
-                    {{ governanceScenes[activeGovernanceScene]?.desc }}
-                  </p>
-                  <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">
-                    {{ governanceScenes[activeGovernanceScene]?.title }}
-                  </h3>
-                </div>
-                <p class="governance-hint">
-                  {{ governanceScenes[activeGovernanceScene]?.hint }}
-                </p>
-                <ul class="governance-features">
-                  <li
-                    v-for="feature in governanceScenes[activeGovernanceScene]?.features"
-                    :key="feature[0]"
-                  >
-                    <strong>{{ feature[0] }}</strong>
-                    <span>{{ feature[1] }}</span>
-                  </li>
-                </ul>
-              </div>
-            </Transition>
-
-            <div class="governance-visual relative">
-              <Transition name="governance-image" mode="out-in">
-                <button
-                  :key="governanceScenes[activeGovernanceScene]?.image"
-                  type="button"
-                  class="governance-image-frame"
-                  :aria-label="`放大查看${governanceScenes[activeGovernanceScene]?.title}后台界面`"
-                  @click="governancePreviewVisible = true"
-                >
-                  <img
-                    :src="governanceScenes[activeGovernanceScene]?.image"
-                    :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面`"
-                    class="governance-dashboard"
-                  />
-                  <span class="governance-zoom-hint">
-                    <i class="pi pi-search-plus" />
-                    点击放大
-                  </span>
-                </button>
-              </Transition>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section
       class="flex flex-col items-center justify-center gap-6 lg:gap-8 px-8 pb-24 pt-24"
     >
       <div
@@ -1011,6 +971,88 @@ section {
     justify-content: center;
     height: 100dvh;
     padding-block: 1rem;
+  }
+}
+
+.governance-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  max-width: 68rem;
+  margin: 0 auto 1rem;
+  color: var(--p-surface-600);
+  font-size: 0.9rem;
+}
+
+.governance-intro > p:first-child {
+  font-weight: 700;
+}
+
+.governance-intro > div:not(.governance-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 0.9rem;
+}
+
+.governance-intro span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.governance-intro .pi-check {
+  color: var(--p-primary-500);
+}
+
+.governance-intro > p:last-of-type {
+  font-weight: 700;
+}
+
+.governance-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.governance-actions button {
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: transform 200ms ease, background-color 200ms ease;
+}
+
+.governance-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.governance-actions button:first-child {
+  border: 0;
+  color: white;
+  background: var(--p-primary-500);
+}
+
+.governance-actions button:last-child {
+  border: 1px solid var(--p-primary-500);
+  color: var(--p-primary-600);
+  background: transparent;
+}
+
+.s-dark .governance-intro {
+  color: var(--p-surface-300);
+}
+
+@media (max-width: 767px) {
+  .governance-intro {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .governance-intro > div:not(.governance-actions) {
+    justify-content: flex-start;
   }
 }
 
