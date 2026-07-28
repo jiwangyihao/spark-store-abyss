@@ -1585,7 +1585,9 @@ section {
   }
 
   .governance-detail {
+    min-height: 0;
     padding-block: 1.25rem;
+    overflow-y: auto;
   }
 }
 
