@@ -17,6 +17,7 @@ const contactDialog = ref(false);
 const governancePreviewVisible = ref(false);
 const governanceSection = ref<HTMLElement | null>(null);
 const governanceTabs = ref<HTMLElement | null>(null);
+const customizationSection = ref<HTMLElement | null>(null);
 const governanceVisible = ref(false);
 const activeGovernanceScene = ref(0);
 const governanceScenes = [
@@ -293,9 +294,12 @@ onBeforeUnmount(() => {
 });
 
 const scrollToNext = () => {
-  const container = scrollPanel?.value?.$el.firstChild.firstChild;
-  if (container) {
-    container.scrollBy({ top: window.innerHeight, behavior: "smooth" });
+  const container = getScrollContainer();
+  if (container && customizationSection.value) {
+    container.scrollTo({
+      top: customizationSection.value.offsetTop,
+      behavior: "smooth",
+    });
   }
 };
 
@@ -576,6 +580,7 @@ const sendEmail = () => {
     </section>
 
     <section
+      ref="customizationSection"
       class="flex flex-col items-center justify-center gap-6 lg:gap-8 px-8 pb-24 pt-24"
     >
       <div
