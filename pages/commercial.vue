@@ -16,6 +16,7 @@ const sProgress = ref(0);
 const contactDialog = ref(false);
 const governancePreviewVisible = ref(false);
 const governanceSection = ref<HTMLElement | null>(null);
+const governanceTabs = ref<HTMLElement | null>(null);
 const governanceVisible = ref(false);
 const activeGovernanceScene = ref(0);
 const governanceScenes = [
@@ -146,6 +147,35 @@ const scrollToGovernanceScene = (index: number) => {
   });
 };
 
+const syncGovernanceTabsScroll = () => {
+  const tabs = governanceTabs.value;
+  if (!tabs) return;
+
+  window.requestAnimationFrame(() => {
+    const activeTab = tabs.querySelector<HTMLElement>(".governance-tab.active");
+    if (!activeTab) return;
+
+    const tabsRect = tabs.getBoundingClientRect();
+    const activeRect = activeTab.getBoundingClientRect();
+    const edgeGap = 12;
+
+    if (activeRect.top < tabsRect.top + edgeGap) {
+      tabs.scrollBy({
+        top: activeRect.top - tabsRect.top - edgeGap,
+        behavior: "smooth",
+      });
+      return;
+    }
+
+    if (activeRect.bottom > tabsRect.bottom - edgeGap) {
+      tabs.scrollBy({
+        top: activeRect.bottom - tabsRect.bottom + edgeGap,
+        behavior: "smooth",
+      });
+    }
+  });
+};
+
 const handleGovernanceWheel = (event: WheelEvent) => {
   const container = getScrollContainer();
   if (
@@ -173,6 +203,7 @@ const handleGovernanceWheel = (event: WheelEvent) => {
     if (governanceWheelLock) return;
     governanceWheelLock = true;
     activeGovernanceScene.value = 0;
+    syncGovernanceTabsScroll();
     scrollToGovernanceScene(0);
     window.setTimeout(() => {
       governanceWheelLock = false;
@@ -202,6 +233,7 @@ const handleGovernanceWheel = (event: WheelEvent) => {
     Math.max(0, activeGovernanceScene.value + direction),
   );
   activeGovernanceScene.value = nextScene;
+  syncGovernanceTabsScroll();
   scrollToGovernanceScene(nextScene);
 
   window.setTimeout(() => {
@@ -230,6 +262,7 @@ onMounted(() => {
         Math.max(0, (container.scrollTop - sectionTop) / container.clientHeight),
       );
       activeGovernanceScene.value = Math.round(progress);
+      syncGovernanceTabsScroll();
     }
   });
 
@@ -305,8 +338,8 @@ const sendEmail = () => {
           </div>
         </div>
         <div class="governance-panel">
-          <nav class="governance-tabs" aria-label="内网管控场景">
-            <button v-for="(scene, index) in governanceScenes" :key="scene.title" type="button" class="governance-tab" :class="{ active: activeGovernanceScene === index }" @click="activeGovernanceScene = index; if (isGovernanceScrollMode()) scrollToGovernanceScene(index);">
+          <nav ref="governanceTabs" class="governance-tabs" aria-label="内网管控场景">
+            <button v-for="(scene, index) in governanceScenes" :key="scene.title" type="button" class="governance-tab" :class="{ active: activeGovernanceScene === index }" @click="activeGovernanceScene = index; syncGovernanceTabsScroll(); if (isGovernanceScrollMode()) scrollToGovernanceScene(index);">
               <span class="governance-tab-title">{{ scene.title }}</span>
               <span class="governance-tab-desc">{{ scene.desc }}</span>
             </button>
