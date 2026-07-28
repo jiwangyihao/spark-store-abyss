@@ -20,6 +20,17 @@ const governanceVisible = ref(false);
 const activeGovernanceScene = ref(0);
 const governanceScenes = [
   {
+    title: "总览",
+    desc: "企业应用商店运行状态集中总览",
+    hint: "授权状态  |  客户端统计  |  仓库概览  |  暂存操作",
+    image: "/images/02-dashboard.png",
+    features: [
+      ["核心状态总览", "集中展示授权有效性、客户端配额与服务器运行信息"],
+      ["多架构仓库统计", "快速掌握 amd64、arm64 与 loong64 仓库的应用数量和总体积"],
+      ["变更动态追踪", "查看待推送改动与最近暂存操作，及时掌握内容变更"],
+    ],
+  },
+  {
     title: "应用管理",
     desc: "多架构应用仓库统一维护",
     hint: "应用检索  |  分类管理  |  移动下架  |  暂存变更",
@@ -946,7 +957,8 @@ const sendEmail = () => {
 <style scoped>
 section {
   width: 100%;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   scroll-snap-align: start;
 }
 
@@ -1086,7 +1098,7 @@ section {
 .governance-panel {
   display: grid;
   grid-template-columns: 13rem minmax(0, 1fr);
-  height: min(34rem, calc(100vh - 10rem));
+  height: min(34rem, calc(100dvh - 10rem));
   min-height: 26rem;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, var(--p-surface-200));
@@ -1402,9 +1414,9 @@ section {
 @media (max-width: 1199px) {
   .governance-section {
     height: auto;
-    min-height: 100svh;
+    min-height: 100dvh;
     overflow: visible;
-    padding-block: 2rem;
+    padding-block: max(5rem, env(safe-area-inset-top)) 2rem;
   }
 
   .governance-panel {
@@ -1438,8 +1450,8 @@ section {
 
 @media (max-width: 767px) {
   .governance-section {
-    min-height: 100svh;
-    padding: 1.25rem 1rem 2rem;
+    min-height: 100dvh;
+    padding: max(5rem, calc(env(safe-area-inset-top) + 1.25rem)) 1rem 2rem;
   }
 
   .governance-heading {
