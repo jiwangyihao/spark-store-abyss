@@ -285,7 +285,7 @@ const sendEmail = () => {
     >
       <div class="governance-sticky relative z-10 w-full max-w-[92rem]">
         <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
-          <Icon name="s:commercial-governance-title" mode="svg" class="!text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] text-primary-color s-deco-primary-700 s-bg-primary-100 s-bg-2-primary-200 s-bg-3-primary-400 dark:s-deco-primary-400 dark:s-bg-primary-800 dark:s-bg-2-primary-600 dark:s-bg-3-primary-900" />
+          <img src="/assets/images/commercial/spark-store-enterprise.png" alt="星火应用商店商业版" class="w-[1em] h-[1em] !text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] object-contain" />
           <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.3]">
             <span class="text-[#292929] dark:text-surface-50">星火应用商店</span><br />
             <span class="text-primary-color dark:text-primary-400">商业版</span>
