@@ -980,12 +980,12 @@ section {
 
   .governance-sticky {
     position: sticky;
-    top: 0;
+    top: 6.75rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 100dvh;
-    padding-block: 1rem;
+    height: calc(100dvh - 6.75rem);
+    padding-block: 0.5rem;
   }
 }
 
@@ -1098,8 +1098,8 @@ section {
 .governance-panel {
   display: grid;
   grid-template-columns: 13rem minmax(0, 1fr);
-  height: min(34rem, calc(100dvh - 10rem));
-  min-height: 26rem;
+  height: min(34rem, calc(100dvh - 15rem));
+  min-height: 22rem;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, var(--p-surface-200));
   border-radius: 1.75rem;
@@ -1572,8 +1572,12 @@ section {
 
 @media (min-width: 1200px) and (max-height: 760px) {
   .governance-panel {
-    height: calc(100dvh - 8.5rem);
-    min-height: 24rem;
+    height: calc(100dvh - 17rem);
+    min-height: 18rem;
+  }
+
+  .governance-sticky {
+    justify-content: flex-start;
   }
 
   .governance-heading {
