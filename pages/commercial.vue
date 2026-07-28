@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   onMounted,
+  onBeforeUnmount,
   watchEffect,
   ref,
   inject,
@@ -13,6 +14,233 @@ import Dialog from "primevue/dialog";
 const scrollPanel = inject<Ref<ComponentPublicInstance>>("scrollPanel");
 const sProgress = ref(0);
 const contactDialog = ref(false);
+const governancePreviewVisible = ref(false);
+const governanceSection = ref<HTMLElement | null>(null);
+const governanceTabs = ref<HTMLElement | null>(null);
+const customizationSection = ref<HTMLElement | null>(null);
+const governanceVisible = ref(false);
+const activeGovernanceScene = ref(0);
+const governanceScenes = [
+  {
+    title: "总览",
+    desc: "企业应用商店运行状态集中总览",
+    hint: "授权状态  |  客户端统计  |  仓库概览  |  暂存操作",
+    image: "/images/02-dashboard.png",
+    features: [
+      ["核心状态总览", "集中展示授权有效性、客户端配额与服务器运行信息"],
+      ["多架构仓库统计", "快速掌握 amd64、arm64 与 loong64 仓库的应用数量和总体积"],
+      ["变更动态追踪", "查看待推送改动与最近暂存操作，及时掌握内容变更"],
+    ],
+  },
+  {
+    title: "应用管理",
+    desc: "多架构应用仓库统一维护",
+    hint: "应用检索  |  分类管理  |  移动下架  |  暂存变更",
+    image: "/images/03-apps.png",
+    features: [
+      ["多架构仓库", "按 amd64、arm64 与 loong64 分别维护应用"],
+      ["应用全程管理", "集中查看详情、调整分类、移动或下架应用"],
+      ["变更统一推送", "暂存应用调整，确认后一次性保存并推送"],
+    ],
+  },
+  {
+    title: "应用上架",
+    desc: "安装包解析与信息录入",
+    hint: "上传安装包  |  自动解析  |  架构选择  |  信息完善",
+    image: "/images/04-publish.png",
+    features: [
+      ["安装包上传", "支持拖入或选择对应架构的 deb 安装包"],
+      ["信息自动解析", "上传后自动解析软件包基础元数据"],
+      ["分步上架", "按上传、编辑和确认流程规范发布应用"],
+    ],
+  },
+  {
+    title: "首页推荐",
+    desc: "客户端首页内容统一运营",
+    hint: "推荐配置  |  内容排序  |  多架构适配  |  即时发布",
+    image: "/images/05-home.png",
+    features: [
+      ["推荐内容配置", "集中选择并维护客户端首页推荐应用"],
+      ["展示顺序调整", "根据企业需要灵活调整推荐内容顺序"],
+      ["多架构运营", "分别维护不同架构客户端的首页内容"],
+    ],
+  },
+  {
+    title: "客户端管理",
+    desc: "终端接入与状态集中管理",
+    hint: "终端总览  |  状态查询  |  接入管理  |  权限控制",
+    image: "/images/06-clients.png",
+    features: [
+      ["终端统一纳管", "集中查看已接入企业内网的客户端"],
+      ["运行状态总览", "快速掌握终端版本、架构和在线状态"],
+      ["接入权限控制", "通过后端统一维护终端访问权限"],
+    ],
+  },
+  {
+    title: "运维管理",
+    desc: "仓库发布与历史版本维护",
+    hint: "暂存推送  |  更新发布  |  旧版清理  |  仓库维护",
+    image: "/images/07-maintenance.png",
+    features: [
+      ["变更暂存推送", "审核仓库变更后统一保存并推送生效"],
+      ["旧版本清理", "清理历史软件包，控制仓库存储占用"],
+      ["发布过程可控", "形成应用变更、审核和发布管理闭环"],
+    ],
+  },
+  {
+    title: "客户端定制",
+    desc: "企业品牌与客户端能力配置",
+    hint: "品牌定制  |  客户端配置  |  内网部署  |  统一交付",
+    image: "/images/08-customize.png",
+    features: [
+      ["企业形象定制", "配置客户端名称、标识与品牌视觉"],
+      ["功能统一配置", "集中维护客户端功能和默认参数"],
+      ["专属客户端交付", "生成满足企业内网部署需求的客户端"],
+    ],
+  },
+  {
+    title: "授权管理",
+    desc: "客户端授权许可集中管控",
+    hint: "许可状态  |  授权配额  |  有效期限  |  公钥校验",
+    image: "/images/09-license.png",
+    features: [
+      ["授权状态总览", "集中查看许可状态、有效期和终端配额"],
+      ["许可安全校验", "使用信任公钥校验授权许可真实性"],
+      ["终端额度管控", "统一控制企业客户端可用授权数量"],
+    ],
+  },
+  {
+    title: "系统设置",
+    desc: "服务端与仓库运行参数配置",
+    hint: "仓库路径  |  服务端口  |  激活模式  |  密码策略",
+    image: "/images/10-settings.png",
+    features: [
+      ["服务端配置", "维护对外地址、仓库路径和服务端口"],
+      ["客户端激活模式", "根据部署要求选择自动或手动激活"],
+      ["管理安全策略", "配置许可公钥、密码过期和管理员密码"],
+    ],
+  },
+];
+let governanceObserver: IntersectionObserver | undefined;
+let governanceWheelCleanup: (() => void) | undefined;
+let governanceWheelLock = false;
+
+const isGovernanceScrollMode = () =>
+  window.matchMedia("(min-width: 1200px)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const getScrollContainer = () =>
+  scrollPanel?.value?.$el.firstChild.firstChild as HTMLElement | undefined;
+
+const getGovernanceSectionTop = () => {
+  const container = getScrollContainer();
+  if (!container || !governanceSection.value) return 0;
+  return governanceSection.value.offsetTop;
+};
+
+const scrollToGovernanceScene = (index: number) => {
+  const container = getScrollContainer();
+  if (!container) return;
+
+  container.scrollTo({
+    top: getGovernanceSectionTop() + index * container.clientHeight,
+    behavior: "smooth",
+  });
+};
+
+const syncGovernanceTabsScroll = () => {
+  const tabs = governanceTabs.value;
+  if (!tabs) return;
+
+  window.requestAnimationFrame(() => {
+    const activeTab = tabs.querySelector<HTMLElement>(".governance-tab.active");
+    if (!activeTab) return;
+
+    const tabsRect = tabs.getBoundingClientRect();
+    const activeRect = activeTab.getBoundingClientRect();
+    const edgeGap = 12;
+
+    if (activeRect.top < tabsRect.top + edgeGap) {
+      tabs.scrollBy({
+        top: activeRect.top - tabsRect.top - edgeGap,
+        behavior: "smooth",
+      });
+      return;
+    }
+
+    if (activeRect.bottom > tabsRect.bottom - edgeGap) {
+      tabs.scrollBy({
+        top: activeRect.bottom - tabsRect.bottom + edgeGap,
+        behavior: "smooth",
+      });
+    }
+  });
+};
+
+const handleGovernanceWheel = (event: WheelEvent) => {
+  const container = getScrollContainer();
+  if (
+    !container ||
+    !governanceSection.value ||
+    governancePreviewVisible.value ||
+    !isGovernanceScrollMode()
+  ) {
+    return;
+  }
+
+  const sectionTop = getGovernanceSectionTop();
+  const stepHeight = container.clientHeight;
+  const sectionEnd = sectionTop + governanceScenes.length * stepHeight;
+  const currentTop = container.scrollTop;
+  const direction = Math.sign(event.deltaY);
+
+  const isEnteringFromBefore =
+    direction > 0 &&
+    currentTop < sectionTop &&
+    sectionTop - currentTop <= stepHeight;
+
+  if (isEnteringFromBefore) {
+    event.preventDefault();
+    if (governanceWheelLock) return;
+    governanceWheelLock = true;
+    activeGovernanceScene.value = 0;
+    syncGovernanceTabsScroll();
+    scrollToGovernanceScene(0);
+    window.setTimeout(() => {
+      governanceWheelLock = false;
+    }, 760);
+    return;
+  }
+
+  const isInsideGovernance =
+    currentTop >= sectionTop - 2 && currentTop < sectionEnd - 2;
+
+  if (!isInsideGovernance) return;
+
+  if (
+    (direction > 0 && activeGovernanceScene.value >= governanceScenes.length - 1) ||
+    (direction < 0 && activeGovernanceScene.value <= 0)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (governanceWheelLock || direction === 0) return;
+  governanceWheelLock = true;
+
+  const nextScene = Math.min(
+    governanceScenes.length - 1,
+    Math.max(0, activeGovernanceScene.value + direction),
+  );
+  activeGovernanceScene.value = nextScene;
+  syncGovernanceTabsScroll();
+  scrollToGovernanceScene(nextScene);
+
+  window.setTimeout(() => {
+    governanceWheelLock = false;
+  }, 760);
+};
 
 onMounted(() => {
   watchEffect(() => {
@@ -21,13 +249,57 @@ onMounted(() => {
         .lastScrollTop || 0;
     const clientHeight = scrollPanel?.value?.$el.clientHeight || 1;
     sProgress.value = scrollTop / clientHeight;
+
+    if (
+      governanceSection.value &&
+      isGovernanceScrollMode()
+    ) {
+      const container = getScrollContainer();
+      if (!container) return;
+
+      const sectionTop = getGovernanceSectionTop();
+      const progress = Math.min(
+        governanceScenes.length - 1,
+        Math.max(0, (container.scrollTop - sectionTop) / container.clientHeight),
+      );
+      activeGovernanceScene.value = Math.round(progress);
+      syncGovernanceTabsScroll();
+    }
   });
+
+  governanceObserver = new IntersectionObserver(
+    ([entry]) => {
+      if (entry?.isIntersecting) {
+        governanceVisible.value = true;
+      }
+    },
+    { threshold: 0 },
+  );
+
+  if (governanceSection.value) {
+    governanceObserver.observe(governanceSection.value);
+  }
+
+  const container = getScrollContainer();
+  if (container) {
+    container.addEventListener("wheel", handleGovernanceWheel, { passive: false });
+    governanceWheelCleanup = () =>
+      container.removeEventListener("wheel", handleGovernanceWheel);
+  }
+});
+
+onBeforeUnmount(() => {
+  governanceObserver?.disconnect();
+  governanceWheelCleanup?.();
 });
 
 const scrollToNext = () => {
-  const container = scrollPanel?.value?.$el.firstChild.firstChild;
-  if (container) {
-    container.scrollBy({ top: window.innerHeight, behavior: "smooth" });
+  const container = getScrollContainer();
+  if (container && customizationSection.value) {
+    container.scrollTo({
+      top: customizationSection.value.offsetTop,
+      behavior: "smooth",
+    });
   }
 };
 
@@ -44,6 +316,65 @@ const sendEmail = () => {
 <template>
   <div class="page">
     <section
+      ref="governanceSection"
+      class="governance-section relative flex items-center justify-center overflow-hidden px-5 sm:px-8 lg:px-12 py-6 lg:py-8"
+      :class="{ 'is-visible': governanceVisible }"
+    >
+      <div class="governance-sticky relative z-10 w-full max-w-[92rem]">
+        <div class="governance-heading flex items-center justify-center gap-4 sm:gap-5 mb-3 lg:mb-4">
+          <img src="/assets/images/commercial/spark-store-enterprise.png" alt="星火应用商店商业版" class="w-[1em] h-[1em] !text-6xl sm:!text-7xl md:!text-[6rem] lg:!text-[7rem] object-contain" />
+          <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.3]">
+            <span class="text-[#292929] dark:text-surface-50">星火应用商店</span><br />
+            <span class="text-primary-color dark:text-primary-400">商业版</span>
+          </h2>
+        </div>
+        <div class="governance-intro">
+          <p>为政府、企事业单位客户提供专业的应用商店解决方案：</p>
+          <div>
+            <span><i class="pi pi-check" />支持安装在主流信创设备上</span>
+            <span><i class="pi pi-check" />支持定制客户端和服务器端本地部署</span>
+            <span><i class="pi pi-check" />支持指定软件适配服务和信创设备迁移</span>
+          </div>
+          <p>助力客户构建完善的软件分发体系。</p>
+          <div class="governance-actions">
+            <button type="button" @click="sendEmail">联系客服</button>
+            <button type="button" @click="scrollToNext">了解更多</button>
+          </div>
+        </div>
+        <div class="governance-panel">
+          <nav ref="governanceTabs" class="governance-tabs" aria-label="内网管控场景">
+            <button v-for="(scene, index) in governanceScenes" :key="scene.title" type="button" class="governance-tab" :class="{ active: activeGovernanceScene === index }" @click="activeGovernanceScene = index; syncGovernanceTabsScroll(); if (isGovernanceScrollMode()) scrollToGovernanceScene(index);">
+              <span class="governance-tab-title">{{ scene.title }}</span>
+              <span class="governance-tab-desc">{{ scene.desc }}</span>
+            </button>
+          </nav>
+          <div class="governance-detail">
+            <Transition name="governance-scene" mode="out-in">
+              <div :key="activeGovernanceScene" class="governance-detail-copy">
+                <div>
+                  <p class="text-lg text-surface-600 dark:text-surface-300">{{ governanceScenes[activeGovernanceScene]?.desc }}</p>
+                  <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">{{ governanceScenes[activeGovernanceScene]?.title }}</h3>
+                </div>
+                <p class="governance-hint">{{ governanceScenes[activeGovernanceScene]?.hint }}</p>
+                <ul class="governance-features">
+                  <li v-for="feature in governanceScenes[activeGovernanceScene]?.features" :key="feature[0]"><strong>{{ feature[0] }}</strong><span>{{ feature[1] }}</span></li>
+                </ul>
+              </div>
+            </Transition>
+            <div class="governance-visual relative">
+              <Transition name="governance-image" mode="out-in">
+                <button :key="governanceScenes[activeGovernanceScene]?.image" type="button" class="governance-image-frame" :aria-label="`放大查看${governanceScenes[activeGovernanceScene]?.title}后台界面`" @click="governancePreviewVisible = true">
+                  <img :src="governanceScenes[activeGovernanceScene]?.image" :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面`" class="governance-dashboard" />
+                  <span class="governance-zoom-hint"><i class="pi pi-search-plus" />点击放大</span>
+                </button>
+              </Transition>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section
+      v-if="false"
       class="relative flex items-center justify-center gap-10 pt-24 pb-24 sm:pb-0 flex-col sm:flex-row"
     >
       <div
@@ -249,6 +580,7 @@ const sendEmail = () => {
     </section>
 
     <section
+      ref="customizationSection"
       class="flex flex-col items-center justify-center gap-6 lg:gap-8 px-8 pb-24 pt-24"
     >
       <div
@@ -560,6 +892,40 @@ const sendEmail = () => {
     </section>
 
     <Dialog
+      v-model:visible="governancePreviewVisible"
+      modal
+      dismissable-mask
+      :show-header="false"
+      class="governance-preview-dialog"
+      content-class="governance-preview-content"
+      :pt="{
+        root: {
+          style: 'padding:0; overflow:hidden;',
+        },
+        content: {
+          style: 'padding:0; margin:0; overflow:auto;',
+        },
+        mask: {
+          class: 'backdrop-blur-xl bg-black/70!',
+        },
+      }"
+    >
+      <button
+        type="button"
+        class="governance-preview-close"
+        aria-label="关闭图片预览"
+        @click="governancePreviewVisible = false"
+      >
+        <i class="pi pi-times" />
+      </button>
+      <img
+        :src="governanceScenes[activeGovernanceScene]?.image"
+        :alt="`${governanceScenes[activeGovernanceScene]?.title}后台界面大图`"
+        class="governance-preview-image"
+      />
+    </Dialog>
+
+    <Dialog
       v-model:visible="contactDialog"
       modal
       :show-header="false"
@@ -629,7 +995,654 @@ const sendEmail = () => {
 <style scoped>
 section {
   width: 100%;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   scroll-snap-align: start;
+}
+
+.governance-section {
+  isolation: isolate;
+  perspective: 1400px;
+}
+
+@media (min-width: 1200px) and (prefers-reduced-motion: no-preference) {
+  .governance-section {
+    height: 900vh;
+    min-height: 900vh;
+    align-items: flex-start;
+    overflow: visible;
+    padding-block: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .governance-sticky {
+    position: sticky;
+    top: 6.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: calc(100dvh - 6.75rem);
+    padding-block: 0.5rem;
+  }
+}
+
+.governance-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  max-width: 68rem;
+  margin: 0 auto 1rem;
+  color: var(--p-surface-600);
+  font-size: 0.9rem;
+}
+
+.governance-intro > p:first-child {
+  font-weight: 700;
+}
+
+.governance-intro > div:not(.governance-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 0.9rem;
+}
+
+.governance-intro span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.governance-intro .pi-check {
+  color: var(--p-primary-500);
+}
+
+.governance-intro > p:last-of-type {
+  font-weight: 700;
+}
+
+.governance-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.governance-actions button {
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: transform 200ms ease, background-color 200ms ease;
+}
+
+.governance-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.governance-actions button:first-child {
+  border: 0;
+  color: white;
+  background: var(--p-primary-500);
+}
+
+.governance-actions button:last-child {
+  border: 1px solid var(--p-primary-500);
+  color: var(--p-primary-600);
+  background: transparent;
+}
+
+.s-dark .governance-intro {
+  color: var(--p-surface-300);
+}
+
+@media (max-width: 767px) {
+  .governance-intro {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .governance-intro > div:not(.governance-actions) {
+    justify-content: flex-start;
+  }
+}
+
+.governance-heading,
+.governance-visual {
+  opacity: 0;
+  transition:
+    opacity 700ms ease,
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.governance-heading {
+  transform: translateY(-30px);
+}
+
+.governance-visual {
+  transform: translateX(90px) translateY(28px) rotateY(-10deg) scale(0.78);
+  transform-origin: center bottom;
+  transition-delay: 220ms;
+}
+
+.governance-section.is-visible .governance-heading,
+.governance-section.is-visible .governance-visual {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotateY(0) scale(1);
+}
+
+.governance-panel {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  height: min(34rem, calc(100dvh - 15rem));
+  min-height: 22rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, var(--p-surface-200));
+  border-radius: 1.75rem;
+  background: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--p-primary-900) 12%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.governance-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  border-right: 1px solid color-mix(in srgb, var(--p-primary-400) 15%, var(--p-surface-200));
+  background: color-mix(in srgb, var(--p-surface-50) 72%, transparent);
+}
+
+.governance-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem 0.65rem 1.15rem;
+  border: 0;
+  border-radius: 1rem;
+  color: var(--p-surface-600);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: color 250ms ease, background-color 250ms ease, transform 250ms ease;
+}
+
+.governance-tab::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  width: 0.25rem;
+  height: 60%;
+  border-radius: 9999px;
+  background: var(--p-primary-500);
+  opacity: 0;
+  transform: scaleY(0.3);
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+
+.governance-tab:hover {
+  color: var(--p-primary-600);
+  background: color-mix(in srgb, var(--p-primary-400) 7%, transparent);
+  transform: translateX(3px);
+}
+
+.governance-tab.active {
+  color: var(--p-primary-700);
+  background: color-mix(in srgb, var(--p-primary-400) 13%, transparent);
+}
+
+.governance-tab.active::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.governance-tab-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.governance-tab-desc {
+  color: var(--p-surface-500);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.governance-detail {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(28rem, 1.28fr);
+  align-items: center;
+  gap: 2rem;
+  padding: 2.25rem;
+  overflow: hidden;
+}
+
+.governance-detail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.governance-hint {
+  color: var(--p-primary-600);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.governance-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.governance-features li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-left: 1rem;
+  border-left: 2px solid color-mix(in srgb, var(--p-primary-400) 45%, transparent);
+}
+
+.governance-features strong {
+  font-size: 1rem;
+}
+
+.governance-features span {
+  color: var(--p-surface-500);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.governance-visual {
+  align-self: end;
+}
+
+.governance-image-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.72;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--p-primary-400) 18%, transparent);
+  border-radius: 0.85rem;
+  background: var(--p-surface-100);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--p-primary-900) 15%, transparent);
+  cursor: zoom-in;
+  text-align: initial;
+}
+
+.governance-image-frame:focus-visible {
+  outline: 3px solid var(--p-primary-400);
+  outline-offset: 3px;
+}
+
+.governance-zoom-hint {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 9999px;
+  color: white;
+  background: rgb(15 23 42 / 72%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+  backdrop-filter: blur(10px);
+  font-size: 0.75rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.governance-image-frame:hover .governance-zoom-hint,
+.governance-image-frame:focus-visible .governance-zoom-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.governance-image-frame:hover .governance-dashboard {
+  transform: translateX(0) scale(1.02);
+}
+
+.governance-dashboard {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  transform: translateX(60px) scale(0.98);
+  transition:
+    opacity 850ms ease 260ms,
+    transform 950ms cubic-bezier(0.22, 1, 0.36, 1) 260ms;
+}
+
+.governance-section.is-visible .governance-dashboard {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.governance-preview-dialog {
+  width: min(94vw, 90rem) !important;
+  max-height: 94dvh;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 1.25rem !important;
+  background: var(--p-surface-0) !important;
+}
+
+:deep(.governance-preview-content) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 94dvh;
+  padding: 0 !important;
+  overflow: auto !important;
+  background: var(--p-surface-0);
+}
+
+.governance-preview-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 9999px;
+  color: white;
+  background: rgb(15 23 42 / 76%);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+.governance-preview-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  object-fit: contain;
+  vertical-align: top;
+}
+
+@media (prefers-color-scheme: dark) {
+  .governance-preview-dialog,
+  :deep(.governance-preview-content) {
+    background: var(--p-surface-900) !important;
+  }
+
+  .governance-preview-image {
+    border-color: var(--p-surface-700);
+  }
+}
+
+@media (max-width: 767px) {
+  .governance-preview-dialog {
+    width: calc(100vw - 1rem) !important;
+    max-height: 92dvh;
+    border-radius: 1rem !important;
+  }
+
+  :deep(.governance-preview-content) {
+    max-height: 92dvh;
+    padding: 0 !important;
+  }
+
+  .governance-zoom-hint {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.governance-image-enter-active,
+.governance-image-leave-active {
+  transition: opacity 260ms ease, transform 320ms ease;
+}
+
+.governance-image-enter-from {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.governance-image-leave-to {
+  opacity: 0;
+  transform: translateX(-18px);
+}
+
+.governance-scene-enter-active,
+.governance-scene-leave-active {
+  transition: opacity 220ms ease, transform 280ms ease;
+}
+
+.governance-scene-enter-from {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.governance-scene-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .governance-panel {
+    background: color-mix(in srgb, var(--p-surface-900) 88%, transparent);
+  }
+
+  .governance-tabs {
+    background: color-mix(in srgb, var(--p-surface-950) 55%, transparent);
+  }
+
+  .governance-tab.active {
+    color: var(--p-primary-300);
+  }
+}
+
+@media (max-width: 1199px) {
+  .governance-section {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding-block: max(5rem, env(safe-area-inset-top)) 2rem;
+  }
+
+  .governance-panel {
+    grid-template-columns: 1fr;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .governance-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--p-primary-400) 15%, var(--p-surface-200));
+  }
+
+  .governance-tab {
+    min-height: 4.5rem;
+  }
+
+  .governance-detail {
+    grid-template-columns: minmax(15rem, 0.78fr) minmax(24rem, 1.22fr);
+    padding: 1.75rem;
+  }
+
+  .governance-visual {
+    transform: translateY(24px) scale(0.92);
+  }
+}
+
+@media (max-width: 767px) {
+  .governance-section {
+    min-height: 100dvh;
+    padding: max(5rem, calc(env(safe-area-inset-top) + 1.25rem)) 1rem 2rem;
+  }
+
+  .governance-heading {
+    justify-content: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .governance-heading :deep(svg) {
+    flex: 0 0 auto;
+    font-size: 3.25rem !important;
+  }
+
+  .governance-panel {
+    border-radius: 1.25rem;
+  }
+
+  .governance-tabs {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 0.35rem;
+    padding: 0.65rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .governance-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .governance-tab {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 7.75rem;
+    min-height: 2.75rem;
+    padding: 0.7rem 0.9rem 0.7rem 1.1rem;
+    scroll-snap-align: start;
+  }
+
+  .governance-tab-desc {
+    display: none;
+  }
+
+  .governance-tab-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .governance-detail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    padding: 1.1rem;
+    overflow: visible;
+  }
+
+  .governance-detail-copy {
+    gap: 0.9rem;
+  }
+
+  .governance-detail-copy h3 {
+    font-size: 1.5rem;
+  }
+
+  .governance-detail-copy > div > p {
+    font-size: 0.95rem;
+  }
+
+  .governance-hint {
+    font-size: 0.78rem;
+  }
+
+  .governance-features {
+    gap: 0.7rem;
+  }
+
+  .governance-features li {
+    padding-left: 0.75rem;
+  }
+
+  .governance-features strong {
+    font-size: 0.9rem;
+  }
+
+  .governance-features span {
+    font-size: 0.78rem;
+  }
+
+  .governance-visual {
+    align-self: auto;
+    transform: translateY(20px) scale(0.94);
+  }
+
+  .governance-image-frame {
+    aspect-ratio: 1.55;
+    border-radius: 0.65rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .governance-section {
+    padding-inline: 0.75rem;
+  }
+
+  .governance-heading :deep(svg) {
+    font-size: 2.85rem !important;
+  }
+
+  .governance-heading h2 {
+    font-size: 1.25rem;
+  }
+
+  .governance-heading h2 span {
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 1200px) and (max-height: 760px) {
+  .governance-panel {
+    height: calc(100dvh - 17rem);
+    min-height: 18rem;
+  }
+
+  .governance-sticky {
+    justify-content: flex-start;
+  }
+
+  .governance-heading {
+    margin-bottom: 0.5rem;
+  }
+
+  .governance-detail {
+    min-height: 0;
+    padding-block: 1.25rem;
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .governance-heading,
+  .governance-copy,
+  .governance-visual {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .governance-dashboard,
+  .governance-callout {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 </style>
