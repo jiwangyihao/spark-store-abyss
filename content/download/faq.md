@@ -18,7 +18,7 @@
 
    ```bash
    cd ~/Downloads
-   sudo apt install ./spark-store-*.deb
+   sudo apt install ./spark-store*.deb
    ```
 
     即可完成星火商店的安装。
