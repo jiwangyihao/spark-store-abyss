@@ -1217,6 +1217,8 @@ section {
   display: grid;
   grid-template-columns: minmax(18rem, 0.72fr) minmax(28rem, 1.28fr);
   align-items: center;
+  min-width: 0;
+  min-height: 0;
   gap: 2rem;
   padding: 2.25rem;
   overflow: hidden;
@@ -1225,6 +1227,8 @@ section {
 .governance-detail-copy {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   gap: 1.35rem;
 }
 
@@ -1623,9 +1627,49 @@ section {
   }
 
   .governance-detail {
+    grid-template-columns: minmax(16rem, 0.8fr) minmax(24rem, 1.2fr);
     min-height: 0;
-    padding-block: 1.25rem;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .governance-detail-copy {
+    max-height: 100%;
+    gap: 0.65rem;
+    padding-right: 0.4rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .governance-detail-copy h3 {
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    margin-top: 0;
+  }
+
+  .governance-detail-copy > div > p {
+    font-size: 0.9rem;
+  }
+
+  .governance-hint {
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .governance-features {
+    gap: 0.5rem;
+  }
+
+  .governance-features li {
+    gap: 0.1rem;
+  }
+
+  .governance-features strong {
+    font-size: 0.88rem;
+  }
+
+  .governance-features span {
+    font-size: 0.75rem;
+    line-height: 1.4;
   }
 }
 

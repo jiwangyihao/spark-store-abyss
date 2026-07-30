@@ -184,10 +184,10 @@ const { data: faqContent } = await useAsyncData("/download/faq", () => {
                 <p
                   class="text-md sm:text-lg lg:text-xl text-primary-color z-[0]"
                 >
-                  <span class="hidden sm:inline">下载 </span>APM 包管理器
+                  <span class="hidden sm:inline"> </span>了解 APM 包管理器
                 </p>
                 <p class="text-xs lg:text-sm text-primary-color opacity-50">
-                  系统无法正常使用星火应用商店时选我～
+                  星火跨平台兼容容器
                 </p>
               </div>
               <Icon
