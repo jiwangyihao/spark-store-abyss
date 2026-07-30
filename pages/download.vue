@@ -187,7 +187,7 @@ const { data: faqContent } = await useAsyncData("/download/faq", () => {
                   <span class="hidden sm:inline">下载 </span>APM 包管理器
                 </p>
                 <p class="text-xs lg:text-sm text-primary-color opacity-50">
-                  Fedora Arch Linux
+                  系统无法正常使用星火应用商店时选我～
                 </p>
               </div>
               <Icon
