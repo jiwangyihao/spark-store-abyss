@@ -9,7 +9,7 @@ const appConfig = useAppConfig();
 const path = computed(() => {
   return useRoute().path;
 });
-const sProgress = ref(1);
+const sProgress = ref(path.value === "/commercial" ? 0 : 1);
 const scrollPanel = useTemplateRef<ComponentPublicInstance>("scrollPanel");
 const header = useTemplateRef<HTMLElement>("header");
 const sX = ref(0);
@@ -32,6 +32,10 @@ const handleScrollOrResize = () => {
   const scrollTop = (scrollPanel.value as unknown as { lastScrollTop: number })
     .lastScrollTop;
   const clientHeight = scrollPanel.value?.$el.clientHeight;
+  if (path.value === "/commercial") {
+    sProgress.value = 0;
+    return;
+  }
   if (path.value === "/") {
     sProgress.value =
       1 -
@@ -247,6 +251,7 @@ const copyGroupNumber = async () => {
       ref="header"
       tabindex="0"
       class="fixed w-full h-15 z-10 px-4 sm:px-8 lg:px-12 translate-y-[calc(var(--s-progress)*4*var(--spacing))] sm:translate-y-[calc(var(--s-progress)*8*var(--spacing))] lg:translate-y-[calc(var(--s-progress)*12*var(--spacing))] before:translate-x-[calc(var(--s-progress)*4*var(--spacing))] sm:before:translate-x-[calc(var(--s-progress)*8*var(--spacing))] lg:before:translate-x-[calc(var(--s-progress)*12*var(--spacing))] before:w-[calc(100%-var(--s-progress)*8*var(--spacing))] sm:before:w-[calc(100%-var(--s-progress)*16*var(--spacing))] lg:before:w-[calc(100%-var(--s-progress)*24*var(--spacing))] sm:h-auto focus-within:h-auto before:h-15 focus-within:before:h-93.5 sm:before:h-full focus-within:sm:before:h-full overflow-hidden focus-within:overflow-visible transition-discrete group"
+      :class="{ 'commercial-header': path === '/commercial' }"
       :style="{ '--s-progress': sProgress }"
       @click="if (!header?.matches(':focus-within')) header?.focus();"
       @focus="handleHeaderFocus"
@@ -467,6 +472,14 @@ header {
     property: transform, overflow;
     duration: 0.1s, 0s;
     delay: 0s, 0.3s;
+  }
+
+  &.commercial-header {
+    transition: none;
+
+    &::before {
+      transition: none;
+    }
   }
 
   &::before {
